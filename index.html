@@ -24,8 +24,10 @@
   .stat .label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
   .stat .value { font-size:22px; font-weight:600; margin-top:6px; font-variant-numeric:tabular-nums; }
   .section-label { width:100%; max-width:420px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin:0 0 10px 4px; }
-  .breakdown { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; width:100%; max-width:420px; margin-bottom:24px; }
+  .breakdown { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; width:100%; max-width:420px; margin-bottom:24px; }
+  .breakdown .stat { grid-column:span 2; }
   .breakdown .stat .value { font-size:18px; }
+  .breakdown .stat.half { grid-column:span 3; }
   .breakdown .stat.year { grid-column:1 / -1; }
   .breakdown .stat.year .value { font-size:24px; color:var(--accent); }
   .rate-row { display:flex; align-items:center; gap:8px; background:var(--card); border-radius:16px; padding:14px 18px; width:100%; max-width:420px; margin-bottom:20px; justify-content:space-between; }
@@ -55,6 +57,8 @@
     <div class="stat"><div class="label">/ second</div><div class="value" id="rSec">$0.00</div></div>
     <div class="stat"><div class="label">/ minute</div><div class="value" id="rMin">$0.00</div></div>
     <div class="stat"><div class="label">/ hour</div><div class="value" id="rHour">$0.00</div></div>
+    <div class="stat half"><div class="label">/ week</div><div class="value" id="rWeek">$0</div></div>
+    <div class="stat half"><div class="label">/ quarter</div><div class="value" id="rQtr">$0</div></div>
     <div class="stat year"><div class="label">/ year (full-time)</div><div class="value" id="rYear">$0</div></div>
   </div>
   <div class="rate-row">
@@ -63,10 +67,10 @@
   </div>
   <button class="btn" id="toggle">Clock In</button>
   <button class="reset" id="reset">Reset session</button>
-  <div class="footnote">Yearly figure assumes full-time hours (40 hrs/week &times; 52 weeks = 2,080 hrs/year).</div>
+  <div class="footnote">Weekly = 40 hrs, quarterly = 13 weeks, yearly = 52 weeks &mdash; all assume full-time hours.</div>
 <script>
   const KEY='earningsTracker.v1';
-  const HOURS_PER_YEAR=2080;
+  const HOURS_PER_WEEK=40; const HOURS_PER_QUARTER=520; const HOURS_PER_YEAR=2080;
   const $=id=>document.getElementById(id);
   let state=load();
   function load(){ try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&typeof s==='object') return s; }catch(e){} return {clockedIn:false,startTime:null,accrued:0,rate:18}; }
@@ -79,7 +83,7 @@
   function money(n){ return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   function money0(n){ return '$'+Math.round(n).toLocaleString('en-US'); }
   function fmtTime(ms){ const t=Math.floor(ms/1000); const h=String(Math.floor(t/3600)).padStart(2,'0'); const m=String(Math.floor((t%3600)/60)).padStart(2,'0'); const s=String(t%60).padStart(2,'0'); return h+':'+m+':'+s; }
-  function renderBreakdown(){ const r=rate(); $('rSec').textContent='$'+ratePerSec().toFixed(4); $('rMin').textContent=money(r/60); $('rHour').textContent=money(r); $('rYear').textContent=money0(r*HOURS_PER_YEAR); }
+  function renderBreakdown(){ const r=rate(); $('rSec').textContent='$'+ratePerSec().toFixed(4); $('rMin').textContent=money(r/60); $('rHour').textContent=money(r); $('rWeek').textContent=money0(r*HOURS_PER_WEEK); $('rQtr').textContent=money0(r*HOURS_PER_QUARTER); $('rYear').textContent=money0(r*HOURS_PER_YEAR); }
   function render(){ $('earnings').textContent=money(currentEarnings()); $('persec').textContent='$'+ratePerSec().toFixed(4)+' / sec'; $('elapsed').textContent=fmtTime(currentElapsed()); const st=$('status'); if(state.clockedIn){ st.textContent='On the clock'; st.classList.add('on'); $('clockedAt').textContent=new Date(state.startTime).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); $('toggle').textContent='Clock Out'; $('toggle').classList.add('out'); } else { st.textContent='Clocked out'; st.classList.remove('on'); $('toggle').textContent='Clock In'; $('toggle').classList.remove('out'); } renderBreakdown(); }
   $('toggle').addEventListener('click',()=>{ if(state.clockedIn){ state.accrued=currentEarnings(); state.clockedIn=false; state.startTime=null; } else { state.rate=rate(); state.clockedIn=true; state.startTime=Date.now(); } save(); render(); });
   $('reset').addEventListener('click',()=>{ if(confirm('Reset this session to $0.00?')){ state={clockedIn:false,startTime:null,accrued:0,rate:rate()}; save(); render(); } });

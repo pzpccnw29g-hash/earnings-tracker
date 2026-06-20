@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>AI Image Generator</title>
+<style>
+  :root { --bg:#0b1220; --card:#161f33; --card2:#0e1626; --accent:#34d399; --accent-dim:#10b981; --text:#e8edf7; --muted:#8a96ad; --line:#2a364f; --red:#f87171; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:radial-gradient(circle at 50% 0%,#1a2540 0%,var(--bg) 60%); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px 56px; }
+  h1 { font-size:16px; font-weight:600; letter-spacing:.5px; color:var(--muted); text-transform:uppercase; margin:8px 0 4px; }
+  .sub { font-size:13px; color:var(--muted); margin:0 0 22px; text-align:center; max-width:620px; line-height:1.5; }
+  .wrap { width:100%; max-width:920px; display:flex; flex-direction:column; gap:16px; }
+  .panel { background:var(--card); border-radius:18px; padding:18px; }
+  label.cap { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:8px; }
+  textarea { width:100%; min-height:96px; resize:vertical; background:var(--card2); border:1px solid var(--line); color:var(--text); font-size:16px; line-height:1.5; padding:14px; border-radius:12px; font-family:inherit; }
+  .opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-top:14px; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+  select, input[type="number"] { background:var(--card2); border:1px solid var(--line); color:var(--text); font-size:15px; padding:10px; border-radius:10px; width:100%; }
+  .seedrow { display:flex; gap:8px; }
+  .seedrow input { flex:1; }
+  .mini { border:1px solid var(--line); background:var(--card2); color:var(--muted); border-radius:10px; padding:0 12px; cursor:pointer; font-size:13px; }
+  .buttons { display:flex; gap:12px; flex-wrap:wrap; }
+  .btn { flex:1 1 200px; border:none; border-radius:16px; padding:18px; font-size:17px; font-weight:700; color:#06231a; background:var(--accent); cursor:pointer; transition:transform .08s,background .2s,opacity .2s; }
+  .btn:active { transform:scale(0.98); }
+  .btn:disabled { opacity:.55; cursor:default; }
+  .btn.alt { background:#23304d; color:var(--text); }
+  .stage { position:relative; width:100%; background:var(--card2); border-radius:18px; overflow:hidden; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; }
+  .stage img { width:100%; height:100%; object-fit:contain; display:none; }
+  .placeholder { color:var(--muted); font-size:14px; text-align:center; padding:24px; }
+  .spinner { position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; gap:14px; background:rgba(14,22,38,.7); backdrop-filter:blur(2px); }
+  .spinner.on { display:flex; }
+  .ring { width:44px; height:44px; border:4px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin 0.9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spinner span { font-size:13px; color:var(--muted); }
+  .err { color:var(--red); font-size:13px; min-height:16px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .chip { background:var(--card2); border:1px solid var(--line); color:var(--muted); font-size:12px; padding:7px 11px; border-radius:999px; cursor:pointer; }
+  .chip:hover { border-color:var(--accent-dim); color:var(--text); }
+  .footnote { font-size:11px; color:var(--muted); max-width:620px; text-align:center; margin-top:20px; line-height:1.5; }
+</style>
+</head>
+<body>
+  <h1>AI Image Generator</h1>
+  <p class="sub">Type a prompt and generate a real image with the FLUX text-to-image model. No sign-in, no API key &mdash; the request goes straight from your browser to the model.</p>
+
+  <div class="wrap">
+    <div class="panel">
+      <label class="cap" for="prompt">Prompt</label>
+      <textarea id="prompt">A photorealistic exterior of a modern single-family house inspired by elvish architecture: flowing organic curved roofline and tall pointed-arch windows like Rivendell, but built from real materials &mdash; pale limestone, warm oak timber cladding, floor-to-ceiling glass, slender steel mullions and a living green roof. Two storeys, realistic human scale, set among silver birch trees beside a still reflecting pond, golden-hour light, wide architectural lens, ultra detailed.</textarea>
+
+      <div class="chips" id="chips">
+        <span class="chip">photorealistic, 8k, sharp focus</span>
+        <span class="chip">cinematic lighting, dramatic shadows</span>
+        <span class="chip">architectural photography, wide lens</span>
+        <span class="chip">misty forest, atmospheric</span>
+        <span class="chip">blue hour, warm interior glow</span>
+      </div>
+
+      <div class="opts">
+        <div class="field">
+          <label class="cap" for="ar">Aspect ratio</label>
+          <select id="ar">
+            <option value="1024x1024">Square 1:1</option>
+            <option value="1216x832" selected>Landscape 3:2</option>
+            <option value="1344x768">Wide 16:9</option>
+            <option value="832x1216">Portrait 2:3</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="cap" for="model">Model</label>
+          <select id="model">
+            <option value="flux" selected>FLUX (realistic)</option>
+            <option value="flux-realism">FLUX Realism</option>
+            <option value="turbo">Turbo (fast)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="cap" for="seed">Seed</label>
+          <div class="seedrow">
+            <input type="number" id="seed" value="42" min="0" step="1">
+            <button class="mini" id="randSeed" title="Randomize">&#x21bb;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn" id="gen">Generate image</button>
+      <button class="btn alt" id="download" disabled>Download</button>
+    </div>
+    <div class="err" id="err"></div>
+
+    <div class="stage">
+      <div class="placeholder" id="ph">Your generated image will appear here.</div>
+      <img id="out" alt="generated image">
+      <div class="spinner" id="spin"><div class="ring"></div><span id="spinTxt">Generating&hellip; this can take 10&ndash;30s</span></div>
+    </div>
+  </div>
+
+  <p class="footnote">Images are generated by the open FLUX model via the free Pollinations endpoint. Generation needs an internet connection. Free public models won&rsquo;t always match a paid product exactly, but you can re-roll the seed or refine the prompt to steer the result.</p>
+
+<script>
+const $ = id => document.getElementById(id);
+const out = $('out'), ph = $('ph'), spin = $('spin'), spinTxt = $('spinTxt'), err = $('err'), genBtn = $('gen'), dlBtn = $('download');
+let lastBlobUrl = null;
+
+$('randSeed').addEventListener('click', () => { $('seed').value = Math.floor(Math.random()*1000000); });
+
+document.querySelectorAll('#chips .chip').forEach(c => {
+  c.addEventListener('click', () => {
+    const p = $('prompt');
+    const add = c.textContent.trim();
+    p.value = p.value.trim().replace(/[,\s]*$/,'') + ', ' + add;
+    p.focus();
+  });
+});
+
+function buildUrl(){
+  const prompt = $('prompt').value.trim();
+  const [w,h] = $('ar').value.split('x');
+  const seed = parseInt($('seed').value,10) || 0;
+  const model = $('model').value;
+  const base = 'https://image.pollinations.ai/prompt/';
+  const q = new URLSearchParams({ width:w, height:h, seed:String(seed), model, nologo:'true', enhance:'true', safe:'false' });
+  return base + encodeURIComponent(prompt) + '?' + q.toString();
+}
+
+async function generate(){
+  const prompt = $('prompt').value.trim();
+  if (!prompt){ err.textContent = 'Please enter a prompt.'; return; }
+  err.textContent = '';
+  genBtn.disabled = true; dlBtn.disabled = true;
+  spin.classList.add('on'); spinTxt.textContent = 'Generating… this can take 10–30s';
+
+  const url = buildUrl();
+  try {
+    const res = await fetch(url, { cache:'no-store' });
+    if (!res.ok) throw new Error('Model returned ' + res.status);
+    const blob = await res.blob();
+    if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+    lastBlobUrl = URL.createObjectURL(blob);
+    out.src = lastBlobUrl;
+    out.onload = () => { out.style.display = 'block'; ph.style.display = 'none'; spin.classList.remove('on'); genBtn.disabled = false; dlBtn.disabled = false; };
+    out.onerror = () => { throw new Error('Could not decode image'); };
+  } catch (e) {
+    // Fallback: let the <img> tag load the URL directly (avoids CORS/fetch issues)
+    spinTxt.textContent = 'Generating… (direct load)';
+    out.onload = () => { out.style.display = 'block'; ph.style.display = 'none'; spin.classList.remove('on'); genBtn.disabled = false; dlBtn.disabled = false; lastBlobUrl = null; };
+    out.onerror = () => { spin.classList.remove('on'); genBtn.disabled = false; err.textContent = 'Generation failed: ' + e.message + '. Check your connection and try again.'; };
+    out.src = url;
+  }
+}
+
+async function download(){
+  try {
+    let href = lastBlobUrl;
+    if (!href){
+      const res = await fetch(out.src, { cache:'force-cache' });
+      href = URL.createObjectURL(await res.blob());
+    }
+    const a = document.createElement('a');
+    a.download = 'ai-image-' + ($('seed').value||'0') + '.png';
+    a.href = href; a.click();
+  } catch(e){
+    // last resort: open in new tab so the user can save manually
+    window.open(out.src, '_blank');
+  }
+}
+
+genBtn.addEventListener('click', generate);
+dlBtn.addEventListener('click', download);
+$('prompt').addEventListener('keydown', e => { if ((e.metaKey||e.ctrlKey) && e.key === 'Enter') generate(); });
+</script>
+</body>
+</html>

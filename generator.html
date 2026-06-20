@@ -4,175 +4,369 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b1220">
-<title>AI Image Generator</title>
+<title>AI Image Studio</title>
 <style>
-  :root { --bg:#0b1220; --card:#161f33; --card2:#0e1626; --accent:#34d399; --accent-dim:#10b981; --text:#e8edf7; --muted:#8a96ad; --line:#2a364f; --red:#f87171; }
+  :root { --bg:#0b1220; --card:#161f33; --card2:#0e1626; --accent:#34d399; --accent-dim:#10b981; --text:#e8edf7; --muted:#8a96ad; --line:#2a364f; --red:#f87171; --amber:#fbbf24; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:radial-gradient(circle at 50% 0%,#1a2540 0%,var(--bg) 60%); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px 56px; }
-  h1 { font-size:16px; font-weight:600; letter-spacing:.5px; color:var(--muted); text-transform:uppercase; margin:8px 0 4px; }
-  .sub { font-size:13px; color:var(--muted); margin:0 0 22px; text-align:center; max-width:620px; line-height:1.5; }
-  .wrap { width:100%; max-width:920px; display:flex; flex-direction:column; gap:16px; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:radial-gradient(circle at 50% 0%,#1a2540 0%,var(--bg) 60%); color:var(--text); min-height:100vh; padding:24px 16px 64px; }
+  .head { text-align:center; margin-bottom:20px; }
+  h1 { font-size:18px; font-weight:700; letter-spacing:.5px; margin:6px 0 4px; }
+  .sub { font-size:13px; color:var(--muted); margin:0 auto; max-width:640px; line-height:1.5; }
+  .layout { display:grid; grid-template-columns:minmax(320px,420px) 1fr; gap:18px; max-width:1180px; margin:0 auto; align-items:start; }
+  @media (max-width:880px){ .layout { grid-template-columns:1fr; } }
   .panel { background:var(--card); border-radius:18px; padding:18px; }
+  .panel + .panel { margin-top:16px; }
   label.cap { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:8px; }
-  textarea { width:100%; min-height:96px; resize:vertical; background:var(--card2); border:1px solid var(--line); color:var(--text); font-size:16px; line-height:1.5; padding:14px; border-radius:12px; font-family:inherit; }
-  .opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-top:14px; }
+  textarea, select, input[type="number"], input[type="password"], input[type="text"] { width:100%; background:var(--card2); border:1px solid var(--line); color:var(--text); font-size:15px; padding:11px; border-radius:11px; font-family:inherit; }
+  textarea { min-height:104px; resize:vertical; line-height:1.5; }
+  textarea.sm { min-height:54px; }
+  .opts { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
   .field { display:flex; flex-direction:column; gap:6px; }
-  select, input[type="number"] { background:var(--card2); border:1px solid var(--line); color:var(--text); font-size:15px; padding:10px; border-radius:10px; width:100%; }
   .seedrow { display:flex; gap:8px; }
   .seedrow input { flex:1; }
-  .mini { border:1px solid var(--line); background:var(--card2); color:var(--muted); border-radius:10px; padding:0 12px; cursor:pointer; font-size:13px; }
-  .buttons { display:flex; gap:12px; flex-wrap:wrap; }
-  .btn { flex:1 1 200px; border:none; border-radius:16px; padding:18px; font-size:17px; font-weight:700; color:#06231a; background:var(--accent); cursor:pointer; transition:transform .08s,background .2s,opacity .2s; }
-  .btn:active { transform:scale(0.98); }
-  .btn:disabled { opacity:.55; cursor:default; }
-  .btn.alt { background:#23304d; color:var(--text); }
-  .stage { position:relative; width:100%; background:var(--card2); border-radius:18px; overflow:hidden; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; }
-  .stage img { width:100%; height:100%; object-fit:contain; display:none; }
-  .placeholder { color:var(--muted); font-size:14px; text-align:center; padding:24px; }
-  .spinner { position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; gap:14px; background:rgba(14,22,38,.7); backdrop-filter:blur(2px); }
-  .spinner.on { display:flex; }
-  .ring { width:44px; height:44px; border:4px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin 0.9s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .spinner span { font-size:13px; color:var(--muted); }
-  .err { color:var(--red); font-size:13px; min-height:16px; }
-  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .mini { border:1px solid var(--line); background:var(--card2); color:var(--muted); border-radius:10px; padding:0 13px; cursor:pointer; font-size:14px; }
+  .mini:hover { color:var(--text); border-color:var(--accent-dim); }
+  .btn { width:100%; border:none; border-radius:16px; padding:18px; font-size:17px; font-weight:700; color:#06231a; background:var(--accent); cursor:pointer; transition:transform .08s,opacity .2s; margin-top:16px; }
+  .btn:active { transform:scale(0.99); }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
   .chip { background:var(--card2); border:1px solid var(--line); color:var(--muted); font-size:12px; padding:7px 11px; border-radius:999px; cursor:pointer; }
   .chip:hover { border-color:var(--accent-dim); color:var(--text); }
-  .footnote { font-size:11px; color:var(--muted); max-width:620px; text-align:center; margin-top:20px; line-height:1.5; }
+  .modes { display:flex; gap:8px; background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:4px; margin-bottom:14px; }
+  .modes button { flex:1; border:none; background:transparent; color:var(--muted); font-size:13px; font-weight:600; padding:9px; border-radius:9px; cursor:pointer; }
+  .modes button.active { background:var(--accent); color:#06231a; }
+  .pro { display:none; margin-top:14px; border-top:1px solid var(--line); padding-top:14px; }
+  .pro.show { display:block; }
+  .keynote { font-size:11px; color:var(--amber); margin-top:8px; line-height:1.5; }
+  .err { color:var(--red); font-size:13px; min-height:16px; margin-top:10px; }
+  /* results */
+  .stage-wrap { min-height:300px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .cell { position:relative; background:var(--card2); border-radius:14px; overflow:hidden; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; }
+  .cell img { width:100%; height:100%; object-fit:cover; cursor:zoom-in; display:block; }
+  .cell .acts { position:absolute; bottom:0; left:0; right:0; display:flex; gap:6px; padding:8px; background:linear-gradient(to top,rgba(8,12,22,.85),transparent); opacity:0; transition:opacity .15s; }
+  .cell:hover .acts { opacity:1; }
+  .cell .acts button { flex:1; border:none; background:rgba(255,255,255,.12); color:#fff; font-size:12px; padding:7px; border-radius:8px; cursor:pointer; backdrop-filter:blur(2px); }
+  .cell .acts button:hover { background:var(--accent); color:#06231a; }
+  .ring { width:40px; height:40px; border:4px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .placeholder { color:var(--muted); font-size:14px; text-align:center; padding:40px 24px; }
+  .secthead { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .secthead h2 { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:0; }
+  .clear { background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; text-decoration:underline; }
+  .hist { display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px; }
+  .hist .h { aspect-ratio:1/1; border-radius:10px; overflow:hidden; cursor:pointer; border:1px solid var(--line); }
+  .hist .h img { width:100%; height:100%; object-fit:cover; }
+  /* lightbox */
+  .lb { position:fixed; inset:0; background:rgba(5,8,16,.92); display:none; align-items:center; justify-content:center; z-index:50; padding:24px; }
+  .lb.on { display:flex; }
+  .lb img { max-width:96vw; max-height:88vh; border-radius:12px; }
+  .lb .x { position:absolute; top:18px; right:22px; font-size:30px; color:#fff; cursor:pointer; line-height:1; }
+  .footnote { font-size:11px; color:var(--muted); max-width:760px; text-align:center; margin:24px auto 0; line-height:1.6; }
 </style>
 </head>
 <body>
-  <h1>AI Image Generator</h1>
-  <p class="sub">Type a prompt and generate a real image with the FLUX text-to-image model. No sign-in, no API key &mdash; the request goes straight from your browser to the model.</p>
+  <div class="head">
+    <h1>AI Image Studio</h1>
+    <p class="sub">Generate real images from a text prompt. Free mode uses the open FLUX model with no key; Pro mode uses your own OpenAI key for frontier-quality <code>gpt-image-1</code> results.</p>
+  </div>
 
-  <div class="wrap">
-    <div class="panel">
-      <label class="cap" for="prompt">Prompt</label>
-      <textarea id="prompt">A photorealistic exterior of a modern single-family house inspired by elvish architecture: flowing organic curved roofline and tall pointed-arch windows like Rivendell, but built from real materials &mdash; pale limestone, warm oak timber cladding, floor-to-ceiling glass, slender steel mullions and a living green roof. Two storeys, realistic human scale, set among silver birch trees beside a still reflecting pond, golden-hour light, wide architectural lens, ultra detailed.</textarea>
-
-      <div class="chips" id="chips">
-        <span class="chip">photorealistic, 8k, sharp focus</span>
-        <span class="chip">cinematic lighting, dramatic shadows</span>
-        <span class="chip">architectural photography, wide lens</span>
-        <span class="chip">misty forest, atmospheric</span>
-        <span class="chip">blue hour, warm interior glow</span>
-      </div>
-
-      <div class="opts">
-        <div class="field">
-          <label class="cap" for="ar">Aspect ratio</label>
-          <select id="ar">
-            <option value="1024x1024">Square 1:1</option>
-            <option value="1216x832" selected>Landscape 3:2</option>
-            <option value="1344x768">Wide 16:9</option>
-            <option value="832x1216">Portrait 2:3</option>
-          </select>
+  <div class="layout">
+    <!-- CONTROLS -->
+    <div>
+      <div class="panel">
+        <div class="modes">
+          <button id="modeFree" class="active">Free &middot; FLUX</button>
+          <button id="modePro">Pro &middot; OpenAI</button>
         </div>
-        <div class="field">
-          <label class="cap" for="model">Model</label>
-          <select id="model">
-            <option value="flux" selected>FLUX (realistic)</option>
-            <option value="flux-realism">FLUX Realism</option>
-            <option value="turbo">Turbo (fast)</option>
-          </select>
+
+        <label class="cap" for="prompt">Prompt</label>
+        <textarea id="prompt">A photorealistic exterior of a modern single-family house inspired by elvish architecture: flowing organic curved roofline and tall pointed-arch windows like Rivendell, but built from real materials — pale limestone, warm oak timber cladding, floor-to-ceiling glass, slender steel mullions and a living green roof. Two storeys, realistic human scale, among silver birch trees beside a still reflecting pond, golden-hour light, wide architectural lens, ultra detailed.</textarea>
+
+        <div class="chips" id="chips">
+          <span class="chip">photorealistic, 8k, sharp focus</span>
+          <span class="chip">cinematic lighting</span>
+          <span class="chip">architectural photography</span>
+          <span class="chip">misty, atmospheric</span>
+          <span class="chip">blue hour, warm glow</span>
         </div>
-        <div class="field">
-          <label class="cap" for="seed">Seed</label>
-          <div class="seedrow">
-            <input type="number" id="seed" value="42" min="0" step="1">
-            <button class="mini" id="randSeed" title="Randomize">&#x21bb;</button>
+
+        <div style="margin-top:14px">
+          <label class="cap" for="neg">Avoid (negative prompt)</label>
+          <textarea id="neg" class="sm">blurry, distorted, lowres, watermark, text, extra windows, warped perspective</textarea>
+        </div>
+
+        <div class="opts">
+          <div class="field">
+            <label class="cap" for="style">Style preset</label>
+            <select id="style">
+              <option value="">None (use prompt as-is)</option>
+              <option value="photorealistic, ultra detailed, natural lighting, 50mm">Photorealistic</option>
+              <option value="cinematic film still, dramatic lighting, anamorphic, shallow depth of field">Cinematic</option>
+              <option value="architectural visualization, octane render, physically based, crisp">3D render</option>
+              <option value="digital concept art, painterly, dramatic, trending on artstation">Concept art</option>
+              <option value="soft watercolor painting, textured paper, gentle washes">Watercolor</option>
+              <option value="anime key visual, studio quality, vibrant, clean linework">Anime</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="cap" for="ar">Aspect ratio</label>
+            <select id="ar">
+              <option value="square">Square 1:1</option>
+              <option value="landscape" selected>Landscape 3:2</option>
+              <option value="wide">Wide 16:9</option>
+              <option value="portrait">Portrait 2:3</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="cap" for="count">Variations</label>
+            <select id="count"><option>1</option><option selected>2</option><option>3</option><option>4</option></select>
+          </div>
+          <div class="field">
+            <label class="cap" for="seed">Seed</label>
+            <div class="seedrow">
+              <input type="number" id="seed" value="42" min="0" step="1">
+              <button class="mini" id="randSeed" title="Randomize">&#x21bb;</button>
+            </div>
           </div>
         </div>
+
+        <!-- PRO SETTINGS -->
+        <div class="pro" id="proBox">
+          <label class="cap" for="apiKey">OpenAI API key</label>
+          <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+          <div class="opts">
+            <div class="field">
+              <label class="cap" for="quality">Quality</label>
+              <select id="quality"><option value="auto" selected>Auto</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+            </div>
+            <div class="field">
+              <label class="cap" for="bg">Background</label>
+              <select id="bg"><option value="auto" selected>Auto</option><option value="opaque">Opaque</option><option value="transparent">Transparent</option></select>
+            </div>
+          </div>
+          <p class="keynote">Your key is stored only in this browser (localStorage) and sent directly to OpenAI. Don't use this on a shared computer. Never commit a key to a repo.</p>
+        </div>
+
+        <button class="btn" id="gen">Generate</button>
+        <div class="err" id="err"></div>
       </div>
     </div>
 
-    <div class="buttons">
-      <button class="btn" id="gen">Generate image</button>
-      <button class="btn alt" id="download" disabled>Download</button>
-    </div>
-    <div class="err" id="err"></div>
-
-    <div class="stage">
-      <div class="placeholder" id="ph">Your generated image will appear here.</div>
-      <img id="out" alt="generated image">
-      <div class="spinner" id="spin"><div class="ring"></div><span id="spinTxt">Generating&hellip; this can take 10&ndash;30s</span></div>
+    <!-- RESULTS -->
+    <div>
+      <div class="panel stage-wrap">
+        <div class="secthead"><h2>Results</h2></div>
+        <div class="grid" id="grid"><div class="placeholder" id="ph">Your generated images will appear here. Hit Generate to start.</div></div>
+      </div>
+      <div class="panel" id="histPanel" style="display:none">
+        <div class="secthead"><h2>History</h2><button class="clear" id="clearHist">Clear</button></div>
+        <div class="hist" id="hist"></div>
+      </div>
     </div>
   </div>
 
-  <p class="footnote">Images are generated by the open FLUX model via the free Pollinations endpoint. Generation needs an internet connection. Free public models won&rsquo;t always match a paid product exactly, but you can re-roll the seed or refine the prompt to steer the result.</p>
+  <p class="footnote">Free mode generates with the open-source FLUX model via the keyless Pollinations endpoint — strong and free, but it won't match a paid product on every prompt. Pro mode calls OpenAI's <code>gpt-image-1</code> directly from your browser using a key you provide. Both require an internet connection. History thumbnails are saved locally in your browser only.</p>
+
+  <div class="lb" id="lb"><span class="x" id="lbx">&times;</span><img id="lbimg" alt="enlarged"></div>
 
 <script>
 const $ = id => document.getElementById(id);
-const out = $('out'), ph = $('ph'), spin = $('spin'), spinTxt = $('spinTxt'), err = $('err'), genBtn = $('gen'), dlBtn = $('download');
-let lastBlobUrl = null;
+const grid = $('grid'), ph = $('ph'), err = $('err'), genBtn = $('gen');
+let mode = 'free';
+const HKEY = 'imgStudio.history.v1';
+const AKEY = 'imgStudio.openaiKey.v1';
 
-$('randSeed').addEventListener('click', () => { $('seed').value = Math.floor(Math.random()*1000000); });
+// ---- mode toggle ----
+function setMode(m){
+  mode = m;
+  $('modeFree').classList.toggle('active', m==='free');
+  $('modePro').classList.toggle('active', m==='pro');
+  $('proBox').classList.toggle('show', m==='pro');
+}
+$('modeFree').addEventListener('click', ()=>setMode('free'));
+$('modePro').addEventListener('click', ()=>setMode('pro'));
 
-document.querySelectorAll('#chips .chip').forEach(c => {
-  c.addEventListener('click', () => {
-    const p = $('prompt');
-    const add = c.textContent.trim();
-    p.value = p.value.trim().replace(/[,\s]*$/,'') + ', ' + add;
-    p.focus();
-  });
-});
+// ---- key persistence ----
+$('apiKey').value = localStorage.getItem(AKEY) || '';
+$('apiKey').addEventListener('input', e => localStorage.setItem(AKEY, e.target.value.trim()));
 
-function buildUrl(){
-  const prompt = $('prompt').value.trim();
-  const [w,h] = $('ar').value.split('x');
-  const seed = parseInt($('seed').value,10) || 0;
-  const model = $('model').value;
-  const base = 'https://image.pollinations.ai/prompt/';
-  const q = new URLSearchParams({ width:w, height:h, seed:String(seed), model, nologo:'true', enhance:'true', safe:'false' });
-  return base + encodeURIComponent(prompt) + '?' + q.toString();
+// ---- chips & seed ----
+$('randSeed').addEventListener('click', ()=>{ $('seed').value = Math.floor(Math.random()*1000000); });
+document.querySelectorAll('#chips .chip').forEach(c => c.addEventListener('click', ()=>{
+  const p = $('prompt'); p.value = p.value.trim().replace(/[,\s]*$/,'') + ', ' + c.textContent.trim(); p.focus();
+}));
+
+// ---- size mapping ----
+function dims(){
+  const ar = $('ar').value;
+  const free = { square:[1024,1024], landscape:[1216,832], wide:[1344,768], portrait:[832,1216] }[ar];
+  const oai  = { square:'1024x1024', landscape:'1536x1024', wide:'1536x1024', portrait:'1024x1536' }[ar];
+  return { free, oai };
+}
+function fullPrompt(){
+  let p = $('prompt').value.trim();
+  const style = $('style').value;
+  if (style) p += ', ' + style;
+  const neg = $('neg').value.trim();
+  if (neg && mode==='pro') p += '. Do not include: ' + neg + '.';
+  return p;
 }
 
+// ---- result cells ----
+function cellLoading(){
+  const c = document.createElement('div'); c.className='cell';
+  c.innerHTML = '<div class="ring"></div>';
+  grid.appendChild(c); return c;
+}
+function fillCell(c, src, meta){
+  c.innerHTML = '';
+  const img = document.createElement('img'); img.src = src; img.alt = 'generated';
+  img.addEventListener('click', ()=>openLb(src));
+  const acts = document.createElement('div'); acts.className='acts';
+  const dl = document.createElement('button'); dl.textContent='Save';
+  dl.addEventListener('click', e=>{ e.stopPropagation(); downloadSrc(src, meta.seed); });
+  const vary = document.createElement('button'); vary.textContent='Vary';
+  vary.addEventListener('click', e=>{ e.stopPropagation(); $('seed').value = Math.floor(Math.random()*1000000); generate(); });
+  acts.append(dl, vary);
+  c.append(img, acts);
+}
+function cellError(c, msg){ c.innerHTML = '<div class="placeholder" style="font-size:12px;color:var(--red)">'+msg+'</div>'; }
+
+// ---- generation ----
 async function generate(){
-  const prompt = $('prompt').value.trim();
-  if (!prompt){ err.textContent = 'Please enter a prompt.'; return; }
   err.textContent = '';
-  genBtn.disabled = true; dlBtn.disabled = true;
-  spin.classList.add('on'); spinTxt.textContent = 'Generating… this can take 10–30s';
-
-  const url = buildUrl();
+  const prompt = $('prompt').value.trim();
+  if (!prompt){ err.textContent='Please enter a prompt.'; return; }
+  if (ph) ph.remove();
+  genBtn.disabled = true; genBtn.textContent = 'Generating…';
+  grid.innerHTML = '';
+  const n = parseInt($('count').value,10);
+  const baseSeed = parseInt($('seed').value,10) || 0;
   try {
-    const res = await fetch(url, { cache:'no-store' });
-    if (!res.ok) throw new Error('Model returned ' + res.status);
-    const blob = await res.blob();
-    if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
-    lastBlobUrl = URL.createObjectURL(blob);
-    out.src = lastBlobUrl;
-    out.onload = () => { out.style.display = 'block'; ph.style.display = 'none'; spin.classList.remove('on'); genBtn.disabled = false; dlBtn.disabled = false; };
-    out.onerror = () => { throw new Error('Could not decode image'); };
-  } catch (e) {
-    // Fallback: let the <img> tag load the URL directly (avoids CORS/fetch issues)
-    spinTxt.textContent = 'Generating… (direct load)';
-    out.onload = () => { out.style.display = 'block'; ph.style.display = 'none'; spin.classList.remove('on'); genBtn.disabled = false; dlBtn.disabled = false; lastBlobUrl = null; };
-    out.onerror = () => { spin.classList.remove('on'); genBtn.disabled = false; err.textContent = 'Generation failed: ' + e.message + '. Check your connection and try again.'; };
-    out.src = url;
-  }
-}
-
-async function download(){
-  try {
-    let href = lastBlobUrl;
-    if (!href){
-      const res = await fetch(out.src, { cache:'force-cache' });
-      href = URL.createObjectURL(await res.blob());
-    }
-    const a = document.createElement('a');
-    a.download = 'ai-image-' + ($('seed').value||'0') + '.png';
-    a.href = href; a.click();
+    if (mode === 'pro') await genPro(prompt, n, baseSeed);
+    else await genFree(n, baseSeed);
   } catch(e){
-    // last resort: open in new tab so the user can save manually
-    window.open(out.src, '_blank');
+    err.textContent = e.message || String(e);
+  } finally {
+    genBtn.disabled = false; genBtn.textContent = 'Generate';
   }
 }
 
+async function genFree(n, baseSeed){
+  const [w,h] = dims().free;
+  let p = $('prompt').value.trim();
+  const style = $('style').value; if (style) p += ', ' + style;
+  const neg = $('neg').value.trim();
+  const base = 'https://image.pollinations.ai/prompt/';
+  const tasks = [];
+  for (let i=0;i<n;i++){
+    const seed = baseSeed + i;
+    const c = cellLoading();
+    const q = new URLSearchParams({ width:String(w), height:String(h), seed:String(seed), model:'flux', nologo:'true', enhance:'true' });
+    if (neg) q.set('negative', neg);
+    const url = base + encodeURIComponent(p) + '?' + q.toString();
+    tasks.push(loadInto(c, url, seed));
+  }
+  await Promise.allSettled(tasks);
+}
+
+function loadInto(cell, url, seed){
+  return new Promise(resolve => {
+    const probe = new Image();
+    probe.crossOrigin = 'anonymous';
+    probe.onload = ()=>{ fillCell(cell, url, {seed}); saveHistory(url, seed); resolve(); };
+    probe.onerror = ()=>{ // retry once without crossOrigin so it still displays
+      const p2 = new Image();
+      p2.onload = ()=>{ fillCell(cell, url, {seed}); resolve(); };
+      p2.onerror = ()=>{ cellError(cell, 'Failed to load'); resolve(); };
+      p2.src = url;
+    };
+    probe.src = url;
+  });
+}
+
+async function genPro(prompt, n, baseSeed){
+  const key = ($('apiKey').value || '').trim();
+  if (!key) throw new Error('Enter your OpenAI API key (Pro mode), or switch to Free mode.');
+  const size = dims().oai;
+  const cells = []; for (let i=0;i<n;i++) cells.push(cellLoading());
+  const body = { model:'gpt-image-1', prompt:fullPrompt(), n, size, quality:$('quality').value, background:$('bg').value };
+  let res;
+  try {
+    res = await fetch('https://api.openai.com/v1/images/generations', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
+      body: JSON.stringify(body)
+    });
+  } catch(e){ cells.forEach(c=>cellError(c,'Network/CORS error')); throw new Error('Request failed: '+e.message); }
+  if (!res.ok){
+    let detail = res.status;
+    try { const j = await res.json(); detail = j.error?.message || detail; } catch(_){}
+    cells.forEach(c=>cellError(c, 'Error'));
+    throw new Error('OpenAI error: ' + detail);
+  }
+  const data = await res.json();
+  (data.data||[]).forEach((d,i)=>{
+    const src = d.b64_json ? 'data:image/png;base64,'+d.b64_json : d.url;
+    if (cells[i]) fillCell(cells[i], src, {seed:baseSeed+i});
+    saveHistory(src, baseSeed+i);
+  });
+}
+
+// ---- download ----
+async function downloadSrc(src, seed){
+  try {
+    let href = src;
+    if (!src.startsWith('data:')){ const r = await fetch(src,{cache:'force-cache'}); href = URL.createObjectURL(await r.blob()); }
+    const a = document.createElement('a'); a.download = 'image-'+(seed||'0')+'.png'; a.href = href; a.click();
+  } catch(_){ window.open(src,'_blank'); }
+}
+
+// ---- lightbox ----
+function openLb(src){ $('lbimg').src = src; $('lb').classList.add('on'); }
+$('lbx').addEventListener('click', ()=>$('lb').classList.remove('on'));
+$('lb').addEventListener('click', e=>{ if(e.target===$('lb')) $('lb').classList.remove('on'); });
+
+// ---- history (thumbnails in localStorage) ----
+function loadHistory(){ try { return JSON.parse(localStorage.getItem(HKEY)) || []; } catch(_){ return []; } }
+function renderHistory(){
+  const items = loadHistory();
+  $('histPanel').style.display = items.length ? 'block' : 'none';
+  const h = $('hist'); h.innerHTML = '';
+  items.forEach(it => {
+    const d = document.createElement('div'); d.className='h';
+    const img = document.createElement('img'); img.src = it.thumb;
+    img.addEventListener('click', ()=>{ $('prompt').value = it.prompt; if(it.full) openLb(it.full); });
+    d.appendChild(img); h.appendChild(d);
+  });
+}
+function saveHistory(src, seed){
+  // make a small thumbnail to keep localStorage light
+  const img = new Image(); img.crossOrigin='anonymous';
+  img.onload = ()=>{
+    try {
+      const cv = document.createElement('canvas'); const s=160;
+      const r = Math.min(s/img.width, s/img.height);
+      cv.width = Math.max(1,img.width*r|0); cv.height = Math.max(1,img.height*r|0);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      const thumb = cv.toDataURL('image/jpeg',0.6);
+      const items = loadHistory();
+      items.unshift({ thumb, full: src.startsWith('data:')?src:null, prompt:$('prompt').value.trim(), seed, t:Date.now() });
+      while (items.length > 16) items.pop();
+      localStorage.setItem(HKEY, JSON.stringify(items));
+      renderHistory();
+    } catch(_){ /* tainted canvas (CORS) — skip thumbnail */ }
+  };
+  img.src = src;
+}
+$('clearHist').addEventListener('click', ()=>{ localStorage.removeItem(HKEY); renderHistory(); });
+
+// ---- wire up ----
 genBtn.addEventListener('click', generate);
-dlBtn.addEventListener('click', download);
-$('prompt').addEventListener('keydown', e => { if ((e.metaKey||e.ctrlKey) && e.key === 'Enter') generate(); });
+$('prompt').addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='Enter') generate(); });
+renderHistory();
 </script>
 </body>
 </html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Inventory">
+<meta name="theme-color" content="#0b1220">
+<title>Inventory Scanner</title>
+<style>
+  :root { --bg:#0b1220; --card:#161f33; --accent:#34d399; --accent-dim:#10b981; --red:#f87171; --amber:#fbbf24; --text:#e8edf7; --muted:#8a96ad; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; padding:0; height:100%; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:radial-gradient(circle at 50% 0%,#1a2540 0%,var(--bg) 60%); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:max(env(safe-area-inset-top),24px) 20px max(env(safe-area-inset-bottom),24px); }
+  h1 { font-size:17px; font-weight:600; letter-spacing:.5px; color:var(--muted); text-transform:uppercase; margin:8px 0 18px; }
+
+  /* Mode toggle: scan-to-stock vs scan-to-sell */
+  .modes { display:flex; gap:0; width:100%; max-width:420px; background:#0e1626; border:1px solid #2a364f; border-radius:14px; padding:4px; margin-bottom:16px; }
+  .mode { flex:1; text-align:center; padding:12px 8px; border-radius:10px; font-size:15px; font-weight:700; color:var(--muted); cursor:pointer; border:none; background:none; font-family:inherit; transition:background .15s,color .15s; }
+  .mode .sub { display:block; font-size:11px; font-weight:500; margin-top:2px; opacity:.8; }
+  .mode.active.stock { background:var(--accent); color:#06231a; }
+  .mode.active.sell { background:var(--amber); color:#3a2600; }
+
+  /* Scan box */
+  .scanwrap { width:100%; max-width:420px; margin-bottom:10px; }
+  #scan { width:100%; background:#0e1626; border:2px solid #2a364f; color:var(--text); font-size:18px; font-weight:600; padding:16px; border-radius:14px; text-align:center; letter-spacing:1px; }
+  #scan:focus { outline:none; border-color:var(--accent); }
+  body.mode-sell #scan:focus { border-color:var(--amber); }
+  .scanrow { display:flex; gap:10px; width:100%; max-width:420px; margin-bottom:8px; }
+  .scanrow .btn2 { flex:1; }
+  .btn2 { border:1px solid #2a364f; background:var(--card); color:var(--text); border-radius:12px; padding:13px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .btn2:active { transform:scale(0.98); }
+
+  .status { font-size:14px; color:var(--muted); margin:6px 0 18px; min-height:20px; text-align:center; max-width:420px; transition:color .2s; }
+  .status.ok { color:var(--accent); }
+  .status.warn { color:var(--amber); }
+  .status.err { color:var(--red); }
+
+  /* Summary stats */
+  .grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; width:100%; max-width:420px; margin-bottom:16px; }
+  .stat { background:var(--card); border-radius:14px; padding:12px 8px; text-align:center; }
+  .stat .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .stat .value { font-size:20px; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; }
+
+  #search { width:100%; max-width:420px; background:#0e1626; border:1px solid #2a364f; color:var(--text); font-size:15px; padding:12px 14px; border-radius:12px; margin-bottom:12px; }
+  #search:focus { outline:none; border-color:var(--accent-dim); }
+
+  .list { width:100%; max-width:420px; display:flex; flex-direction:column; gap:10px; margin-bottom:18px; }
+  .item { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid transparent; border-radius:16px; padding:14px; transition:border-color .2s; }
+  .item.low { border-color:var(--red); }
+  .item.flash { border-color:var(--accent); }
+  .item .meta { flex:1; min-width:0; }
+  .item .name { font-size:16px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item .code { font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; margin-top:2px; }
+  .item .name[contenteditable]:focus { outline:none; border-bottom:1px solid var(--accent); }
+  .qtybox { display:flex; align-items:center; gap:8px; }
+  .qbtn { width:34px; height:34px; border-radius:50%; border:1px solid #2a364f; background:#0e1626; color:var(--text); font-size:20px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1; }
+  .qbtn:active { transform:scale(0.92); }
+  .qty { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; min-width:34px; text-align:center; }
+  .item.low .qty { color:var(--red); }
+  .del { background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer; padding:4px 6px; }
+  .empty { color:var(--muted); font-size:14px; text-align:center; padding:30px 10px; max-width:420px; }
+
+  .actions { display:flex; gap:10px; width:100%; max-width:420px; margin-bottom:10px; }
+  .actions .btn2 { flex:1; }
+  .reset { background:none; border:none; color:var(--muted); font-size:14px; padding:10px; cursor:pointer; text-decoration:underline; }
+  .footnote { font-size:11px; color:var(--muted); max-width:420px; text-align:center; margin-top:4px; line-height:1.5; }
+
+  /* Camera overlay */
+  .cam { position:fixed; inset:0; background:rgba(8,12,22,.96); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  .cam.show { display:flex; }
+  .cam video { width:100%; max-width:420px; border-radius:16px; background:#000; }
+  .cam .hint { color:var(--text); margin:16px 0; font-size:15px; text-align:center; }
+  .cam .close { border:none; border-radius:14px; padding:14px 28px; font-size:16px; font-weight:700; background:var(--card); color:var(--text); cursor:pointer; }
+</style>
+</head>
+<body>
+  <h1>Inventory Scanner</h1>
+
+  <div class="modes">
+    <button class="mode stock active" id="modeStock" type="button">Stock In<span class="sub">scan to add / update</span></button>
+    <button class="mode sell" id="modeSell" type="button">Sell / Use<span class="sub">scan to use one</span></button>
+  </div>
+
+  <div class="scanwrap">
+    <input id="scan" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Scan or type a barcode…">
+  </div>
+  <div class="scanrow">
+    <button class="btn2" id="camBtn" type="button">📷 Scan with camera</button>
+  </div>
+  <div class="status" id="status">Ready — scan a label.</div>
+
+  <div class="grid">
+    <div class="stat"><div class="label">Items</div><div class="value" id="sItems">0</div></div>
+    <div class="stat"><div class="label">In stock</div><div class="value" id="sUnits">0</div></div>
+    <div class="stat"><div class="label">Low / out</div><div class="value" id="sLow">0</div></div>
+  </div>
+
+  <input id="search" type="text" placeholder="Search inventory…" autocomplete="off">
+  <div class="list" id="list"></div>
+
+  <div class="actions">
+    <button class="btn2" id="exportBtn" type="button">⬇ Export sheet (CSV)</button>
+    <button class="btn2" id="addBtn" type="button">＋ Add by hand</button>
+  </div>
+  <button class="reset" id="reset">Clear all inventory</button>
+  <div class="footnote">
+    <strong>Stock In</strong>: scan to add an item (new labels ask for a name) or bump its count up.<br>
+    <strong>Sell / Use</strong>: scan to take one off the count at the register.<br>
+    Works with USB/Bluetooth register scanners (they type the code + Enter) or your phone camera. Everything is saved on this device, and Export gives you a spreadsheet you can open in Excel or Google Sheets.
+  </div>
+  <a href="index.html" style="display:inline-block;margin-top:18px;color:#8a96ad;font-size:14px;text-decoration:underline;">&larr; Back to earnings tracker</a>
+
+  <div class="cam" id="cam">
+    <video id="video" playsinline muted></video>
+    <div class="hint" id="camHint">Point the camera at a barcode…</div>
+    <button class="close" id="camClose" type="button">Close camera</button>
+  </div>
+
+<script>
+  const KEY='inventory.v1';
+  const LOW_THRESHOLD=3; // items at or below this count are flagged low
+  const $=id=>document.getElementById(id);
+
+  let items=load();        // [{code, name, qty}]
+  let mode='stock';        // 'stock' | 'sell'
+  let lastCamCode='', lastCamAt=0; // de-dupe camera reads
+
+  function load(){ try{ const s=JSON.parse(localStorage.getItem(KEY)); if(Array.isArray(s)) return s; }catch(e){} return []; }
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(items)); }catch(e){} }
+  function find(code){ return items.find(it=>it.code===code); }
+
+  function setStatus(msg,kind){ const el=$('status'); el.textContent=msg; el.className='status'+(kind?' '+kind:''); }
+
+  // Short beep so the register operator gets audio feedback even when not looking.
+  let actx=null;
+  function beep(ok){ try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); const o=actx.createOscillator(),g=actx.createGain(); o.connect(g); g.connect(actx.destination); o.frequency.value=ok?880:300; g.gain.value=.08; o.start(); setTimeout(()=>{o.stop();},ok?90:200); }catch(e){} }
+
+  // The heart of it: one scanned/typed code, applied according to the current mode.
+  function handleCode(raw){
+    const code=(raw||'').trim();
+    if(!code) return;
+    let it=find(code);
+    if(mode==='stock'){
+      if(!it){
+        const name=prompt('New label!\nWhat is this item called?', '');
+        if(name===null){ setStatus('Cancelled — nothing added.','warn'); return; }
+        it={code, name:(name.trim()||('Item '+code)), qty:1};
+        items.push(it);
+        beep(true); setStatus('Added "'+it.name+'" — now 1 in stock.','ok');
+      } else {
+        it.qty++;
+        beep(true); setStatus('Stocked "'+it.name+'" — now '+it.qty+' in stock.','ok');
+      }
+    } else { // sell / use
+      if(!it){
+        beep(false); setStatus('Unknown label '+code+' — switch to Stock In to add it first.','err');
+        return;
+      }
+      if(it.qty<=0){
+        beep(false); setStatus('"'+it.name+'" is already out of stock!','err');
+      } else {
+        it.qty--;
+        beep(true);
+        const k=it.qty<=0?'warn':(it.qty<=LOW_THRESHOLD?'warn':'ok');
+        setStatus('Sold "'+it.name+'" — '+it.qty+' left'+(it.qty<=0?' (OUT)':'')+'.',k);
+      }
+    }
+    save(); render(code);
+  }
+
+  function adjust(code,delta){ const it=find(code); if(!it) return; it.qty=Math.max(0,it.qty+delta); save(); render(); }
+  function rename(code,name){ const it=find(code); if(!it) return; it.name=name.trim()||it.name; save(); }
+  function remove(code){ const it=find(code); if(!it) return; if(confirm('Remove "'+it.name+'" from inventory?')){ items=items.filter(x=>x.code!==code); save(); render(); } }
+
+  function render(flashCode){
+    const q=($('search').value||'').toLowerCase().trim();
+    const units=items.reduce((s,it)=>s+Math.max(0,it.qty),0);
+    const low=items.filter(it=>it.qty<=LOW_THRESHOLD).length;
+    $('sItems').textContent=items.length;
+    $('sUnits').textContent=units;
+    $('sLow').textContent=low;
+
+    const list=$('list'); list.innerHTML='';
+    const shown=items
+      .filter(it=>!q || it.name.toLowerCase().includes(q) || it.code.toLowerCase().includes(q))
+      .sort((a,b)=>a.name.localeCompare(b.name));
+
+    if(items.length===0){ list.innerHTML='<div class="empty">No items yet. Put it in <b>Stock In</b> mode and scan a label to start.</div>'; return; }
+    if(shown.length===0){ list.innerHTML='<div class="empty">No items match "'+q+'".</div>'; return; }
+
+    shown.forEach(it=>{
+      const row=document.createElement('div');
+      row.className='item'+(it.qty<=LOW_THRESHOLD?' low':'')+(flashCode===it.code?' flash':'');
+      row.innerHTML=
+        '<div class="meta">'+
+          '<div class="name" contenteditable="true" spellcheck="false"></div>'+
+          '<div class="code">#'+it.code+'</div>'+
+        '</div>'+
+        '<div class="qtybox">'+
+          '<button class="qbtn" data-act="minus">−</button>'+
+          '<div class="qty">'+it.qty+'</div>'+
+          '<button class="qbtn" data-act="plus">+</button>'+
+        '</div>'+
+        '<button class="del" title="Remove">✕</button>';
+      const nameEl=row.querySelector('.name');
+      nameEl.textContent=it.name;
+      nameEl.addEventListener('blur',()=>rename(it.code,nameEl.textContent));
+      nameEl.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); nameEl.blur(); } });
+      row.querySelector('[data-act="minus"]').addEventListener('click',()=>adjust(it.code,-1));
+      row.querySelector('[data-act="plus"]').addEventListener('click',()=>adjust(it.code,1));
+      row.querySelector('.del').addEventListener('click',()=>remove(it.code));
+      list.appendChild(row);
+    });
+  }
+
+  function setMode(m){
+    mode=m;
+    $('modeStock').classList.toggle('active',m==='stock');
+    $('modeSell').classList.toggle('active',m==='sell');
+    document.body.classList.toggle('mode-sell',m==='sell');
+    setStatus(m==='stock'?'Stock In — scan to add or restock.':'Sell / Use — scan to take one off the shelf.', m==='sell'?'warn':'ok');
+    focusScan();
+  }
+  function focusScan(){ const s=$('scan'); if(document.activeElement!==s && !$('cam').classList.contains('show')) s.focus(); }
+
+  // --- Scan input: register scanners type the code then send Enter ---
+  $('scan').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const v=$('scan').value; $('scan').value=''; handleCode(v); } });
+  $('search').addEventListener('input',()=>render());
+  $('modeStock').addEventListener('click',()=>setMode('stock'));
+  $('modeSell').addEventListener('click',()=>setMode('sell'));
+
+  $('addBtn').addEventListener('click',()=>{
+    const code=prompt('Barcode / label number for the new item:'); if(code===null) return;
+    const c=code.trim(); if(!c){ setStatus('No barcode entered.','warn'); return; }
+    if(find(c)){ setStatus('That barcode is already on the sheet.','warn'); render(c); return; }
+    const name=prompt('What is it called?'); if(name===null) return;
+    const qty=parseInt(prompt('How many in stock right now?','1'),10);
+    items.push({code:c,name:name.trim()||('Item '+c),qty:isNaN(qty)?0:Math.max(0,qty)});
+    save(); render(c); setStatus('Added "'+(name.trim()||c)+'".','ok');
+  });
+
+  $('exportBtn').addEventListener('click',()=>{
+    if(items.length===0){ setStatus('Nothing to export yet.','warn'); return; }
+    const esc=s=>'"'+String(s).replace(/"/g,'""')+'"';
+    const rows=[['Barcode','Item','Quantity']].concat(
+      items.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(it=>[it.code,it.name,it.qty])
+    );
+    const csv=rows.map(r=>r.map(esc).join(',')).join('\r\n');
+    const blob=new Blob(['﻿'+csv],{type:'text/csv'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='inventory-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setStatus('Exported '+items.length+' items to a spreadsheet.','ok');
+  });
+
+  $('reset').addEventListener('click',()=>{ if(confirm('Clear ALL inventory? This cannot be undone.')){ items=[]; save(); render(); setStatus('Inventory cleared.','warn'); } });
+
+  // Keep the scan box focused so a register scanner's keystrokes always land here.
+  document.addEventListener('click',e=>{ if(e.target.closest('input,button,[contenteditable],.cam')) return; focusScan(); });
+  window.addEventListener('focus',focusScan);
+
+  // --- Camera scanning (phones / tablets) via the built-in BarcodeDetector ---
+  let stream=null, detector=null, scanning=false;
+  $('camBtn').addEventListener('click',openCam);
+  $('camClose').addEventListener('click',closeCam);
+
+  async function openCam(){
+    if(!('BarcodeDetector' in window)){
+      setStatus('Camera scanning isn\'t supported on this browser — use a USB/Bluetooth scanner or type the code.','warn');
+      return;
+    }
+    try{
+      detector=detector||new BarcodeDetector();
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      const v=$('video'); v.srcObject=stream; await v.play();
+      $('cam').classList.add('show'); scanning=true; $('camHint').textContent='Point the camera at a barcode…';
+      scanLoop();
+    }catch(e){
+      setStatus('Could not open the camera ('+(e.name||'error')+'). Check camera permissions.','err');
+      closeCam();
+    }
+  }
+  async function scanLoop(){
+    if(!scanning) return;
+    try{
+      const codes=await detector.detect($('video'));
+      if(codes&&codes.length){
+        const code=codes[0].rawValue;
+        const now=Date.now();
+        if(code && (code!==lastCamCode || now-lastCamAt>1500)){
+          lastCamCode=code; lastCamAt=now;
+          handleCode(code);
+          $('camHint').textContent='Scanned '+code+' ✓';
+          beep(true);
+        }
+      }
+    }catch(e){ /* detect throws between frames sometimes; ignore */ }
+    requestAnimationFrame(scanLoop);
+  }
+  function closeCam(){
+    scanning=false; $('cam').classList.remove('show');
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    focusScan();
+  }
+
+  setMode('stock');
+  render();
+  focusScan();
+</script>
+</body>
+</html>

@@ -23,7 +23,7 @@ Safari can't load Chrome extensions directly, so the Safari version is a userscr
 | **Option + Shift + U** | Turn upscaling on/off (before/after compare) |
 | **Option + Shift + ]** | More sharpness |
 | **Option + Shift + [** | Less sharpness |
-| **Option + Shift + R** | Cycle max output: 1080p → 1440p → 4K (lower saves battery) |
+| **Option + Shift + R** | Cycle max output: 1080p → 1440p → 4K → 5K (lower saves battery; 5K is the default) |
 | **Option + Shift + I** | Show status, e.g. `640×360 → 2560×1440` |
 
 A small message in the top-right corner confirms each change.

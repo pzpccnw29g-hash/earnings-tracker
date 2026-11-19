@@ -1,4 +1,4 @@
-const DEFAULTS = { enabled: true, sharpness: 0.5, maxRes: 2160 };
+const DEFAULTS = { enabled: true, sharpness: 0.5, maxRes: 2880 };
 const $ = (id) => document.getElementById(id);
 
 const LABELS = {

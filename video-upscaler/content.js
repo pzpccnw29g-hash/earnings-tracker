@@ -8,8 +8,8 @@
   if (window.__videoUpscalerLoaded) return;
   window.__videoUpscalerLoaded = true;
 
-  const DEFAULTS = { enabled: true, sharpness: 0.5, maxRes: 2160 };
-  const MAX_PIXELS = { 1080: 1920 * 1080, 1440: 2560 * 1440, 2160: 3840 * 2160 };
+  const DEFAULTS = { enabled: true, sharpness: 0.5, maxRes: 2880 };
+  const MAX_PIXELS = { 1080: 1920 * 1080, 1440: 2560 * 1440, 2160: 3840 * 2160, 2880: 5120 * 2880 };
   const MIN_SIZE = 160; // ignore tiny thumbnails / preview videos (CSS px)
 
   let settings = { ...DEFAULTS };
@@ -240,7 +240,7 @@
       // Output resolution = real screen pixels, capped for performance.
       const dpr = window.devicePixelRatio || 1;
       let outW = Math.round(cssW * dpr), outH = Math.round(cssH * dpr);
-      const cap = MAX_PIXELS[settings.maxRes] || MAX_PIXELS[2160];
+      const cap = MAX_PIXELS[settings.maxRes] || MAX_PIXELS[2880];
       if (outW * outH > cap) {
         const k = Math.sqrt(cap / (outW * outH));
         outW = Math.round(outW * k); outH = Math.round(outH * k);

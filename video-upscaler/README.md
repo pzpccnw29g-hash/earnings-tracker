@@ -1,10 +1,34 @@
-# Video Upscaler (Chrome / Edge extension)
+# Video Upscaler (Safari, Chrome, Edge)
 
 Upscales and sharpens videos you watch in the browser, in real time on your Mac's GPU.
 Each video gets redrawn at your screen's full Retina resolution using a bicubic
 (Catmull-Rom) upscale with anti-ringing, followed by AMD's contrast-adaptive sharpening (CAS).
 
-## Install on Mac (takes about 1 minute)
+## Safari on Mac (recommended for you)
+
+Safari can't load Chrome extensions directly, so the Safari version is a userscript
+(`video-upscaler.user.js`) that runs in the free **Userscripts** app.
+
+1. Install **Userscripts** (free) from the Mac App Store: https://apps.apple.com/us/app/userscripts/id1463298887
+2. Open the Userscripts app once. It shows where it keeps scripts (a folder you can change).
+   Copy `video-upscaler.user.js` into that folder.
+3. In Safari, choose **Safari → Settings → Extensions**, tick **Userscripts**, and then
+   set it to **Allow** on every website (or allow it on the sites you watch video on).
+4. Reload the video page.
+
+### Safari controls (on the video page)
+
+| Keys | What it does |
+|---|---|
+| **Option + Shift + U** | Turn upscaling on/off (before/after compare) |
+| **Option + Shift + ]** | More sharpness |
+| **Option + Shift + [** | Less sharpness |
+| **Option + Shift + R** | Cycle max output: 1080p → 1440p → 4K (lower saves battery) |
+| **Option + Shift + I** | Show status, e.g. `640×360 → 2560×1440` |
+
+A small message in the top-right corner confirms each change.
+
+## Chrome / Edge on Mac
 
 1. Unzip `video-upscaler.zip` and put the `video-upscaler` folder somewhere permanent, such as Documents.
    Chrome loads the extension from that folder, so don't delete it.

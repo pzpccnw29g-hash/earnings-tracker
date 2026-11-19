@@ -209,7 +209,7 @@
       if (this.dead) return;
       if (!v.isConnected) { this.destroy(); return; }
       if (!settings.enabled) return this.hide('off');
-      if (v.mediaKeys) return this.hide('drm');
+      if (v.mediaKeys || v.webkitKeys) return this.hide('drm');
       if (v.readyState < 2 || !v.videoWidth || !v.videoHeight) return this.hide('waiting');
 
       const w = v.clientWidth, h = v.clientHeight;
